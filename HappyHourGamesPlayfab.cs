@@ -73,7 +73,8 @@ namespace PlayFab.AzureFunctions
             //string storageConnectionString = STORAGE_CONNECTION_KEY;
             //string tableName = "TableGameLaunchCounter";
             
-            string playFabId = context.FunctionArgument.PlayFabId;
+            //string playFabId = context.FunctionArgument.PlayFabId;
+            string playFabId = req.Query["PlayFabId"];
             string responseMessage = "Success:PlayfabID " + playFabId;
 
              return new OkObjectResult(responseMessage);
