@@ -89,7 +89,7 @@ namespace PlayFab.AzureFunctions
             string playFabId = context.CallerEntityProfile.Lineage.MasterPlayerAccountId;
 
             var storageConnectionString = Environment.GetEnvironmentVariable(STORAGE_CONNECTION_KEY, EnvironmentVariableTarget.Process);
-            var tableName = Environment.GetEnvironmentVariable(ATNGameLaunchCounter, EnvironmentVariableTarget.Process);;
+            var tableName = ATNGameLaunchCounter;
 
             CloudStorageAccount storageAccount;
             storageAccount = CloudStorageAccount.Parse(storageConnectionString);
