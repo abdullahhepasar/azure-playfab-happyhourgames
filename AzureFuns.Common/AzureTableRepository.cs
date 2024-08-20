@@ -63,7 +63,7 @@
         }
 
         /// <summary>
-        /// Gets the entity.
+        /// Update or Add the entity.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="tableName"></param>

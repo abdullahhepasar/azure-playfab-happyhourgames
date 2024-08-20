@@ -5,11 +5,11 @@
     public class Player : TableEntity
     {
         public Player() {}
-        public Player(string partitionKey, string guidId)
+        public Player(string partitionKey, string rowKey)
         {
             PartitionKey = partitionKey;
-            RowKey = guidId.ToString();
-            Id = guidId;
+            RowKey = rowKey;
+            Id = rowKey;
         }
 
         public string Id { get; private set; }
