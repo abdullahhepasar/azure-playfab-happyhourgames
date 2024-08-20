@@ -5,6 +5,7 @@
 
     public class Player : TableEntity
     {
+        public Player() {}
         public Player(string partitionKey, string guidId)
         {
             PartitionKey = partitionKey;
