@@ -77,9 +77,8 @@ namespace PlayFab.AzureFunctions
             string responseMessage = "Success:PlayfabID " + playFabId;
 
             var container = IoCContainer.Create();
+            //var azureTableRepository = container.GetRequiredService<IAzureTableRepository>();
             var azureTableRepository = container.GetRequiredService<IAzureTableRepository>();
-            var parser = container.GetRequiredService<IParser<RawPlayer>>();
-            var mapper = container.GetRequiredService<IMapper<RawPlayer, Player>>();
 
             Player player = new Player(TablePartitionKey, playFabId)
             {
