@@ -17,9 +17,6 @@ namespace PlayFab.AzureFunctions
 {
     public static class HappyHourGamesPlayfab
     {
-        private const string DEV_SECRET_KEY = "PLAYFAB_DEV_SECRET_KEY";
-        private const string STORAGE_CONNECTION_KEY = "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING";
-
         [FunctionName("HappyHourGamesPlayfab")]
         public static async Task<dynamic> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
@@ -77,7 +74,25 @@ namespace PlayFab.AzureFunctions
             string playFabId = req.Query["PlayFabId"];
             string responseMessage = "Success:PlayfabID " + playFabId;
 
-             return new OkObjectResult(responseMessage);
+            var settings = new PlayFabApiSettings
+            {
+                TitleId = context.TitleAuthenticationContext.Id,
+                DeveloperSecretKey = DEV_SECRET_KEY,
+            };
+        
+            var authContext = new PlayFabAuthenticationContext
+            {
+                EntityToken = context.TitleAuthenticationContext.EntityToken
+            };
+        
+            var serverApi = new PlayFabServerInstanceAPI(settings, authContext);
+        
+            var result = await  serverApi.GetUserInventoryAsync(new PlayFab.ServerModels.GetUserInventoryRequest()
+            {
+                PlayFabId = context.CallerEntityProfile.Lineage.MasterPlayerAccountId,
+            });
+
+             return new OkObjectResult(result);
 
             var container = IoCContainer.Create();
             //var azureTableRepository = container.GetRequiredService<IAzureTableRepository>();
