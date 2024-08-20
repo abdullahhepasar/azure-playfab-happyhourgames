@@ -9,12 +9,15 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using PlayFab.ServerModels;
 using System.Collections.Generic;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Table;
 
 namespace PlayFab.AzureFunctions
 {
     public static class HappyHourGamesPlayfab
     {
         private const string DEV_SECRET_KEY = "PLAYFAB_DEV_SECRET_KEY";
+        private const string STORAGE_CONNECTION_KEY = "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING";
 
         [FunctionName("HappyHourGamesPlayfab")]
         public static async Task<dynamic> Run(
@@ -58,5 +61,75 @@ namespace PlayFab.AzureFunctions
 
             return new OkObjectResult(responseMessage);
         }
+
+        [FunctionName("GameLaunchCounter")]
+        public static async Task<dynamic> GameLaunchCounter(
+            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
+            ILogger log)
+        {
+            FunctionExecutionContext<dynamic> context = JsonConvert.DeserializeObject<FunctionExecutionContext<dynamic>>(await req.ReadAsStringAsync());
+
+            string storageConnectionString = STORAGE_CONNECTION_KEY;
+            string tableName = "TableGameLaunchCounter";
+
+            CloudStorageAccount storageAccount;
+            storageAccount = CloudStorageAccount.Parse(storageConnectionString);
+
+            CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+            CloudTable cloudTable = tableClient.GetTableReference(tableName);
+
+            string playFabId = context.FunctionArgument.PlayFabId;
+
+            TableOperation retrieveOperation = TableOperation.Retrieve<PlayerEntity>(playFabId, "");
+            TableResult result = await cloudTable.ExecuteAsync(retrieveOperation);
+            PlayerEntity player = result.Result as PlayerEntity;
+
+            string responseMessage = "1";
+
+                       if (player == null)
+            {
+                //First Save
+                PlayerEntity firstPlayer = new PlayerEntity(playFabId, "")
+                {
+                    Counter = 1
+                };
+
+                MergePlayer(cloudTable, firstPlayer).Wait();
+            }
+            else
+            {
+                //Update
+                player.Counter += 1;
+                responseMessage = player.Counter.ToString();
+                MergePlayer(cloudTable, player).Wait();
+            }
+
+            return new OkObjectResult(responseMessage);
+        }
+
+
+        public static async Task MergePlayer(CloudTable table, PlayerEntity playerEntity)
+        {
+            TableOperation insertOrMergeOperation = TableOperation.InsertOrMerge(playerEntity);
+
+            //Execute the operation
+            TableResult result = await table.ExecuteAsync(insertOrMergeOperation);
+            PlayerEntity insertedPlayer = result.Result as PlayerEntity;
+
+            Console.WriteLine("Added/Updated player");
+        }
+    }
+
+        public class PlayerEntity : TableEntity
+    {
+        public PlayerEntity() { }
+
+        public PlayerEntity(string entityId, string rowKey)
+        {
+            PartitionKey = entityId;
+            RowKey = rowKey;
+        }
+
+        public int Counter { get; set; }
     }
 }
