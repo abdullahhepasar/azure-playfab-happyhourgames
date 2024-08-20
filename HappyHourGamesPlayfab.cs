@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using PlayFab.ServerModels;
 using System.Collections.Generic;
+using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Extensions.DependencyInjection;
 
 using static PlayFab.AzureFunctions.Constants;
@@ -87,20 +88,62 @@ namespace PlayFab.AzureFunctions
 
             string playFabId = context.CallerEntityProfile.Lineage.MasterPlayerAccountId;
 
-            var container = IoCContainer.Create();
+            var storageConnectionString = Environment.GetEnvironmentVariable(STORAGE_CONNECTION_KEY, EnvironmentVariableTarget.Process);
+            var tableName = Environment.GetEnvironmentVariable(ATNGameLaunchCounter, EnvironmentVariableTarget.Process);;
+
+            CloudStorageAccount storageAccount;
+            storageAccount = CloudStorageAccount.Parse(storageConnectionString);
+
+            CloudTableClient tableClient = storageAccount.CreateCloudTableClient(new TableClientConfiguration());
+            CloudTable table = tableClient.GetTableReference(tableName);
+
+
+            Player customer = new Player(TablePartitionKey, playFabId)
+            {
+                GameLaunch = 1
+            };
+
+            MergeUser(table, customer).Wait();
+            QueryUser(table, TablePartitionKey, playFabId).Wait();
+
+            string responseMessage = "SUCCESS: UPDATED -> " + playFabId + "->Other Player Data:" + result;
+            
+
+            return new OkObjectResult(responseMessage);
+
+            //var container = IoCContainer.Create();
             //var azureTableRepository = container.GetRequiredService<IAzureTableRepository>();
-            var azureTableRepository = container.GetRequiredService<IAzureTableRepository>();
+            //var azureTableRepository = container.GetRequiredService<IAzureTableRepository>();
 
             Player player = new Player(TablePartitionKey, playFabId)
             {
                 GameLaunch = 1
             };
 
-            var playerUpdate = await azureTableRepository.UpsertAsync(ATNGameLaunchCounter, player);
+            //var playerUpdate = await azureTableRepository.UpsertAsync(ATNGameLaunchCounter, player);  
+        }
 
-            string responseMessage = "SUCCESS: UPDATED -> " + playFabId + "->Other Player Data:" + result;
+        public static async Task MergeUser(CloudTable table, Player player) {
+            TableOperation insertOrMergeOperation = TableOperation.InsertOrMerge(player);
 
-            return new OkObjectResult(responseMessage);
+            // Execute the operation.
+            TableResult result = await table.ExecuteAsync(insertOrMergeOperation);
+            Player insertedPlayer = result.Result as Player;
+
+            Console.WriteLine("Added user.");
+        }
+
+        public static async Task QueryUser(CloudTable table, string firstName, string lastName) {
+            TableOperation retrieveOperation = TableOperation.Retrieve<Player>(firstName, lastName);
+            
+            TableResult result = await table.ExecuteAsync(retrieveOperation);
+            Player player = result.Result as Player;
+
+            if (player != null)
+            {
+                Console.WriteLine("Fetched \t{0}\t{1}\t{2}", 
+                    player.PartitionKey, player.RowKey, player.GameLaunch);
+            }
         }
     }
 }
