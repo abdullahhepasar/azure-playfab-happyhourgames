@@ -66,18 +66,11 @@ namespace PlayFab.AzureFunctions
             ILogger log)
         {
             FunctionExecutionContext<dynamic> context = JsonConvert.DeserializeObject<FunctionExecutionContext<dynamic>>(await req.ReadAsStringAsync());
-
-            //string storageConnectionString = STORAGE_CONNECTION_KEY;
-            //string tableName = "TableGameLaunchCounter";
-            
-            //string playFabId = context.FunctionArgument.PlayFabId;
-            string playFabId = req.Query["PlayFabId"];
-            string responseMessage = "Success:PlayfabID " + playFabId;
-
+        
             var settings = new PlayFabApiSettings
             {
                 TitleId = context.TitleAuthenticationContext.Id,
-                DeveloperSecretKey = Environment.GetEnvironmentVariable("PLAYFAB_DEV_SECRET_KEY", EnvironmentVariableTarget.Process),
+                DeveloperSecretKey = Environment.GetEnvironmentVariable(DEV_SECRET_KEY, EnvironmentVariableTarget.Process),
             };
         
             var authContext = new PlayFabAuthenticationContext
@@ -87,12 +80,12 @@ namespace PlayFab.AzureFunctions
         
             var serverApi = new PlayFabServerInstanceAPI(settings, authContext);
         
-            var result = await  serverApi.GetUserInventoryAsync(new PlayFab.ServerModels.GetUserInventoryRequest()
+            var result = await  serverApi.GetUserInventoryAsync(new GetUserInventoryRequest()
             {
                 PlayFabId = context.CallerEntityProfile.Lineage.MasterPlayerAccountId,
             });
 
-             return new OkObjectResult(result);
+            string playFabId = context.CallerEntityProfile.Lineage.MasterPlayerAccountId;
 
             var container = IoCContainer.Create();
             //var azureTableRepository = container.GetRequiredService<IAzureTableRepository>();
@@ -103,7 +96,9 @@ namespace PlayFab.AzureFunctions
                 GameLaunch = 1
             };
 
-            var getPlayers = await azureTableRepository.UpsertAsync(ATNGameLaunchCounter, player);
+            var playerUpdate = await azureTableRepository.UpsertAsync(ATNGameLaunchCounter, player);
+
+            string responseMessage = "SUCCESS: UPDATED -> " + playFabId + "->Other Player Data:" + result;
 
             return new OkObjectResult(responseMessage);
         }
