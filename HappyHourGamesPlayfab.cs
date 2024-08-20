@@ -106,7 +106,8 @@ namespace PlayFab.AzureFunctions
             MergeUser(table, customer).Wait();
             Player player = await QueryUser(table, TablePartitionKey, playFabId);
 
-            string responseMessage = "SUCCESS: UPDATED -> " + player + "->Other Player Data:" + result;
+            string responseMessage = 
+            "SUCCESS: UPDATED -> " + player.GameLaunch.ToString() + "->Other Player Data:" + result;
             
 
             return new OkObjectResult(responseMessage);
