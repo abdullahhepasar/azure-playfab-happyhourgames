@@ -104,9 +104,9 @@ namespace PlayFab.AzureFunctions
             };
 
             MergeUser(table, customer).Wait();
-            QueryUser(table, TablePartitionKey, playFabId).Wait();
+            Player player = await QueryUser(table, TablePartitionKey, playFabId);
 
-            string responseMessage = "SUCCESS: UPDATED -> " + playFabId + "->Other Player Data:" + result;
+            string responseMessage = "SUCCESS: UPDATED -> " + player + "->Other Player Data:" + result;
             
 
             return new OkObjectResult(responseMessage);
@@ -115,7 +115,7 @@ namespace PlayFab.AzureFunctions
             //var azureTableRepository = container.GetRequiredService<IAzureTableRepository>();
             //var azureTableRepository = container.GetRequiredService<IAzureTableRepository>();
 
-            Player player = new Player(TablePartitionKey, playFabId)
+            Player player2 = new Player(TablePartitionKey, playFabId)
             {
                 GameLaunch = 1
             };
@@ -133,8 +133,8 @@ namespace PlayFab.AzureFunctions
             Console.WriteLine("Added user.");
         }
 
-        public static async Task QueryUser(CloudTable table, string firstName, string lastName) {
-            TableOperation retrieveOperation = TableOperation.Retrieve<Player>(firstName, lastName);
+        public static async Task<Player> QueryUser(CloudTable table, string tablePartitionKey, string playFabId) {
+            TableOperation retrieveOperation = TableOperation.Retrieve<Player>(tablePartitionKey, playFabId);
             
             TableResult result = await table.ExecuteAsync(retrieveOperation);
             Player player = result.Result as Player;
@@ -144,6 +144,8 @@ namespace PlayFab.AzureFunctions
                 Console.WriteLine("Fetched \t{0}\t{1}\t{2}", 
                     player.PartitionKey, player.RowKey, player.GameLaunch);
             }
+
+            return player;
         }
     }
 }
