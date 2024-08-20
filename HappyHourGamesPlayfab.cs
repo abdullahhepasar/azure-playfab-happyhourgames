@@ -76,6 +76,8 @@ namespace PlayFab.AzureFunctions
             string playFabId = context.FunctionArgument.PlayFabId;
             string responseMessage = "Success:PlayfabID " + playFabId;
 
+             return new OkObjectResult(responseMessage);
+
             var container = IoCContainer.Create();
             //var azureTableRepository = container.GetRequiredService<IAzureTableRepository>();
             var azureTableRepository = container.GetRequiredService<IAzureTableRepository>();
