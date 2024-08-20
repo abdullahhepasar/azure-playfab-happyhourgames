@@ -77,7 +77,7 @@ namespace PlayFab.AzureFunctions
             var settings = new PlayFabApiSettings
             {
                 TitleId = context.TitleAuthenticationContext.Id,
-                DeveloperSecretKey = DEV_SECRET_KEY,
+                DeveloperSecretKey = Environment.GetEnvironmentVariable("PLAYFAB_DEV_SECRET_KEY", EnvironmentVariableTarget.Process),
             };
         
             var authContext = new PlayFabAuthenticationContext
