@@ -1,7 +1,6 @@
 ﻿namespace PlayFab.AzureFunctions
 {
     using Microsoft.Azure.Cosmos.Table;
-    using System;
 
     public class Player : TableEntity
     {
